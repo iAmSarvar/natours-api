@@ -105,9 +105,33 @@ const restrictTo = (...roles) => {
   };
 };
 
+const forgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on POSTed email
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('There is no user with this email address!', 404));
+  }
+  // 2) Generate a random reset token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    status: 'success',
+    resetToken,
+    data: {
+      user
+    }
+  });
+  // 3) Send it to user
+});
+
+const resetPassword = catchAsync(async (req, res, next) => {});
+
 module.exports = {
   signup,
   login,
   protect,
-  restrictTo
+  restrictTo,
+  forgotPassword,
+  resetPassword
 };
