@@ -1,7 +1,11 @@
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 
+const helmet = require('helmet');
+const hpp = require('hpp');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
@@ -10,6 +14,8 @@ const userRouter = require('./routes/userRoutes');
 const app = express();
 
 // 1) MIDDLEWARES
+app.use(helmet());
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -22,8 +28,28 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 app.use(express.static(`${__dirname}/public`));
+
+// Data sanitizing NoSQL query injection
+app.use(mongoSanitize());
+
+// xss security
+app.use(xss());
+
+// parameter pollution
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price'
+    ]
+  })
+);
 
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
