@@ -119,6 +119,12 @@ tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7;
 });
 
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id'
+});
+
 // DOCUMENT MIDDLEWARE: runs before .save() and .create()
 // tourSchema.pre('save', async function(next) {
 //   const guidePromises = this.guides.map(async id => await User.findById(id));
