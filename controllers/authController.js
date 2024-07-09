@@ -17,26 +17,51 @@ const createSendToken = (user, statusCode, res) => {
 
   const cookieOptions = {
     expires: new Date(
-      Date.now() + process.env.JWT_EXPIRES_COOKIE_IN * 24 * 60 * 60 * 1000 //convert to milliseconds
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     httpOnly: true
   };
 
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-
   res.cookie('jwt', token, cookieOptions);
 
-  //hiding password when signup
+  // remove password from output
   user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
     token,
     data: {
-      user
+      user: user
     }
   });
 };
+
+// const createSendToken = (user, statusCode, res) => {
+//   const token = signToken(user._id);
+
+//   const cookieOptions = {
+//     expires: new Date(
+//       Date.now() + process.env.JWT_EXPIRES_COOKIE_IN * 24 * 60 * 60 * 1000 //convert to milliseconds
+//     ),
+//     httpOnly: true
+//   };
+
+//   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+//   res.cookie('jwt', token, cookieOptions);
+
+//   //hiding password when signup
+//   user.password = undefined;
+
+//   res.status(statusCode).json({
+//     status: 'success',
+//     token,
+//     data: {
+//       user
+//     }
+//   });
+// };
 
 const signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
@@ -69,6 +94,17 @@ const login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+const logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true
+  });
+
+  res.status(200).json({
+    status: 'success'
+  });
+};
+
 const protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check if it is there
   let token;
@@ -77,6 +113,8 @@ const protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
 
   if (!token) {
@@ -108,6 +146,37 @@ const protect = catchAsync(async (req, res, next) => {
   req.user = currentUser;
   next();
 });
+
+//Only for rendered pages
+const isLoggenIn = async (req, res, next) => {
+  if (req.cookies.jwt) {
+    try {
+      // Virify token
+      const decoded = await util.promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+
+      // Check is the user still exist
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+      // Check if user changed password after the token was created
+      if (currentUser.userChangedPassword(decoded.iat)) {
+        return next();
+      }
+
+      // There is a loggen in user
+      res.locals.user = currentUser;
+      return next();
+    } catch (error) {
+      return next();
+    }
+  }
+
+  next();
+};
 
 const restrictTo = (...roles) => {
   return (req, res, next) => {
@@ -211,5 +280,7 @@ module.exports = {
   restrictTo,
   forgotPassword,
   resetPassword,
-  updatePassword
+  updatePassword,
+  isLoggenIn,
+  logout
 };

@@ -4,6 +4,8 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
 
 const helmet = require('helmet');
 const hpp = require('hpp');
@@ -22,7 +24,25 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 1) MIDDLEWARES
-app.use(helmet());
+app.use(cors());
+
+// app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'", 'http://127.0.0.1:8000', 'ws://127.0.0.1:57420/'],
+      baseUri: ["'self'"],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      scriptSrc: [
+        "'self'",
+        'https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js'
+      ],
+      objectSrc: ["'none'"],
+      styleSrc: ["'self'", 'https:', 'unsafe-inline'],
+      upgradeInsecureRequests: []
+    }
+  })
+);
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -37,6 +57,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
 
 // Data sanitizing NoSQL query injection
 app.use(mongoSanitize());

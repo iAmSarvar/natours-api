@@ -1,5 +1,6 @@
 const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
 const getOverview = catchAsync(async (req, res) => {
   const tours = await Tour.find();
@@ -15,6 +16,9 @@ const getTour = catchAsync(async (req, res, next) => {
     fields: 'review rating user'
   });
 
+  if (!tour) {
+    next(new AppError('There is not tour with that name!', 404));
+  }
   res.status(200).render('tour', {
     title: tour.name,
     tour
