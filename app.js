@@ -30,7 +30,12 @@ app.use(cors());
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
-      defaultSrc: ["'self'", 'http://127.0.0.1:8000', 'ws://127.0.0.1:57420/'],
+      defaultSrc: [
+        "'self'",
+        'http://127.0.0.1:8000',
+        'ws://127.0.0.1:52941/',
+        'ws://127.0.0.1:57420/'
+      ],
       baseUri: ["'self'"],
       fontSrc: ["'self'", 'https:', 'data:'],
       scriptSrc: [
