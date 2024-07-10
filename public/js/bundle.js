@@ -13203,11 +13203,11 @@ require("regenerator-runtime/runtime");
 var _login = require("./login");
 
 // DOM elements
-var loginForm = document.querySelector('.form');
+var loginForm = document.querySelector('.form--login');
 var logOutBtn = document.querySelector('.nav__el--logout');
 
 if (loginForm) {
-  document.querySelector('.form').addEventListener('submit', function (e) {
+  loginForm.addEventListener('submit', function (e) {
     e.preventDefault();
     var email = document.getElementById('email').value;
     var password = document.getElementById('password').value;
@@ -13246,7 +13246,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57420" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52941" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
